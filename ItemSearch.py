@@ -1,7 +1,9 @@
 import aiohttp
 import random
 import asyncio
+import time
 from bs4 import BeautifulSoup
+from async_lru import alru_cache
 
 class ItemInfo():
     def __init__(self):
@@ -18,6 +20,7 @@ class ItemInfo():
         self.colour = None
         self.growtime = None
         self.gemdrop = None
+        self.texture = None
 
 async def hex_to_rgb(hex: str):
         rgb = []
@@ -26,6 +29,7 @@ async def hex_to_rgb(hex: str):
             rgb.append(decimal)
         return tuple(rgb)
 
+@alru_cache(maxsize=128)
 async def find_item(item: str):
         item = item.replace(" ", "_")
         itemlastwordcapital = item.split("_")[-1].capitalize()
@@ -61,6 +65,10 @@ async def find_item(item: str):
         colour = await hex_to_rgb(colour)
         growtime = soup.find("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").contents[1].text.strip()
         gemdrop = soup.find("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").contents[1].text.strip()
+        try:
+            texture = soup.find("a", {"class": "lightbox"}).find("img").get("src")
+        except AttributeError:
+            return
 
         item_info = ItemInfo()
         item_info.cleanlink = cleanlink
@@ -75,6 +83,7 @@ async def find_item(item: str):
         item_info.colour = colour
         item_info.growtime = growtime
         item_info.gemdrop = gemdrop
+        item_info.texture = texture
         return item_info
 
 if __name__ == "__main__":
@@ -86,6 +95,7 @@ if __name__ == "__main__":
 
         item_name = inp
         try:
+            start_time = time.time()
             rval = asyncio.run(find_item(item_name))
             print("Item Name:", rval.cleanlink)
             print("Item Sprite URL:", rval.image)
@@ -102,6 +112,8 @@ if __name__ == "__main__":
             print("Item Colour (RGB):", rval.colour)
             print("Item Grow Time:", rval.growtime)
             print("Item Gem Drop:", rval.gemdrop)
+            print("Item Texture:", rval.texture)
+            print("Process completed in", time.time() - start_time, "seconds")
         except AttributeError:
              print("Item not found! Make sure you spelled it correctly!")
   
