@@ -22,11 +22,9 @@ or
 python -m pip install -r requirements.txt
 ```
 
-### Install Pylance and Python extension in VSCode
-
 ### Running the file through VSCode
 
-If you've installed the pylance and python extension, you should be able to run the ItemSearch.py file by clicking the "Run Python File" button in the top right corner of the screen
+Install Pylance and Python extensions on github, after you've done that you should be able to run the ItemSearch.py file by clicking the "Run Python File" button in the top right corner of the screen
 
 ### Running the file through terminal
 
@@ -45,7 +43,7 @@ python ItemSearch.py
 # Usage
 ## Guide
 
-### After running the ItemSearch.py file, it will ask you to enter an item name, enter the item name and press enter
+### After running the ItemSearch.py file, it will ask you to enter an item name inside the python terminal, enter the item name and press enter
 
 # License
 This project is licensed under the Apache License - see the [LICENSE](LICENSE) file for details
