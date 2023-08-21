@@ -1,153 +1,164 @@
-import aiohttp
-import random
 import asyncio
+import os
 import time
-from bs4 import BeautifulSoup
+
+import aiohttp
+import growtopia
 from async_lru import alru_cache
+from bs4 import BeautifulSoup
 
-class ItemInfo():
-    def __init__(self):
-        self.itemlast = None
-        self.cleanlink = None
-        self.website = None
-        self.image = None
-        self.description = None
-        self.properties = None
-        self.rarity = None
-        self.itemtype = None
-        self.chi = None
-        self.hardnessfist = None
-        self.hardnesspickaxe = None
-        self.firstcolour = None
-        self.secondcolour = None
-        self.growtime = None
-        self.gemdrop = None
-        self.texture = None
 
-async def hex_to_rgb(hex: str):
-        rgb = []
-        for i in (0, 2, 4):
-            decimal = int(hex[i:i+2], 16)
-            rgb.append(decimal)
-        return tuple(rgb)
+class ItemInfo:
+    def __init__(self) -> None:
+        self.description = ""
+        self.chi = ""
+        self.splicing_seed1 = ""
+        self.splicing_seed2 = ""
+        self.equip_playmod_text = ""
+        self.unequip_playmod_text = ""
+        self.playmod_name = ""
 
-@alru_cache(maxsize=128)
+
+async def create_item_names():
+    items_data = growtopia.ItemsData("")  # Specify the path to your items.dat file here
+    await items_data.parse()
+    with open("itemNames.txt", "w") as f:
+        f.write("\n".join([item.name for item in items_data.items]))
+
+
+def find_formatted_name(item: str, file_content: str):
+    for line in file_content.split("\n"):
+        if line.lower().startswith(item):
+            return line
+
+
+@alru_cache(maxsize=None)
 async def find_item(item: str):
+    session = aiohttp.ClientSession()
+    response = await session.get(
+        f"https://growtopia.fandom.com/wiki/{item}", max_redirects=100
+    )
+    data = await response.read()
+    await session.close()
+    soup = BeautifulSoup(data, "html.parser")
 
-        if "thread" not in item.lower() and "vest" not in item.lower():
-            itemlastwordcapital = item.split("_")[-1].capitalize()
-            itemfirstwordcapital = item.split("_")[0].capitalize()
-            itemlast = item.replace(item.split("_")[-1], itemlastwordcapital)
-            itemlast = itemlast.replace(item.split("_")[0], itemfirstwordcapital)
-            cleanlink = itemlast.replace("_", " ")
-        
-        if ("thread") in item.lower():
-            item = item.replace(" ", "_").lower()
-            itemlastwordcapital = item.split("_")[-1].capitalize().split("_")[0].capitalize()
-            itemfirstwordcapital = item.split("_")[0].capitalize()
-            itemlast = item.replace(item.split("_")[-1], itemlastwordcapital)
-            itemlast = itemlast.replace(item.split("_")[0], itemfirstwordcapital)
-            itemlast = itemlast.replace("thread", "Thread")
-            itemlast = itemlast.replace("_-_", "#")
-            cleanlink = itemlast.replace("_", " ")
-            cleanlink = cleanlink.replace("#", " - ")
-
-        item = item.replace(" ", "_").lower()
-        if ("vest") in item:
-            item = item.replace("vest", "Vest")
-            itemlastwordcapital = item.split("_")[-1].capitalize()
-            itemfirstwordcapital = item.split("_")[0].capitalize()
-            itemlast = item.replace(item.split("_")[-1], itemlastwordcapital)
-            itemlast = itemlast.replace(item.split("_")[0], itemfirstwordcapital)
-            cleanlink = itemlast.replace("_", " ")
-
-        session = aiohttp.ClientSession()
-        response = await session.get(
-            f"https://growtopia.fandom.com/wiki/{itemlast}"
-        )
-        data = await response.read()
-        await session.close()
-        soup = BeautifulSoup(data, "html.parser")
-        website = f"https://growtopia.fandom.com/wiki/{itemlast}"
-        image = soup.find("span", {"class": "mw-headline"}).find("img").get("src")
+    try:
         description = soup.find("div", {"class": "card-text"}).text
-        properties = soup.find("div", {"class": "card-text"}).find_next("div", {"class": "card-text"}).text
-        properties = "\n".join(properties.split("."))
-        if properties == "None":
-            properties = "This item has no properties!"
-        try:
-            rarity = soup.find("span", {"class": "mw-headline"}).find("small").text.replace("(", "").replace(")", "").replace("Rarity: ", "")
-        except AttributeError:
-            rarity = "None"
-        itemtype = soup.find("td").contents[1].text.strip()
-        if len((list_of_contents:=soup.find("td").find_next("td").contents)) >= 2:
+
+        if "|" in description:
+            description = description.replace("|", " ")
+    except AttributeError:
+        description = "This item has no description!"
+
+    try:
+        splicing_seed1 = (
+            soup.find("tbody").find_next("tbody").find("a").find_next("a").text
+        )
+        splicing_seed2 = (
+            soup.find("tbody")
+            .find_next("tbody")
+            .find("a")
+            .find_next("a")
+            .find_next("a")
+            .text
+        )
+
+        if "seed" not in splicing_seed1.lower():
+            splicing_seed1 = "Blank"
+        if "seed" not in splicing_seed2.lower():
+            splicing_seed2 = "Blank"
+    except AttributeError:
+        splicing_seed1 = "Blank"
+        splicing_seed2 = "Blank"
+
+    try:
+        equip_playmod_text = soup.find(
+            "td", {"style": "color:#199e24; padding:0px 20px; font-style: italic"}
+        ).text
+    except AttributeError:
+        equip_playmod_text = ""
+
+    try:
+        unequip_playmod_text = soup.find(
+            "td", {"style": "color:#9e2a18; padding:0px 20px; font-style: italic"}
+        ).text
+    except AttributeError:
+        unequip_playmod_text = ""
+
+    try:
+        if equip_playmod_text != "" and unequip_playmod_text != "":
+            playmod_name = (
+                soup.find("div", {"class": "mw-parser-output"})
+                .find("p")
+                .find_next("p")
+                .find("i")
+                .text
+            )
+        else:
+            playmod_name = ""
+    except AttributeError:
+        playmod_name = ""
+
+    try:
+        if len((list_of_contents := soup.find("td").find_next("td").contents)) >= 2:
             list_of_contents = 1
         else:
             list_of_contents = 0
         chi = soup.find("td").find_next("td").contents[list_of_contents].text.strip()
-        hardnessfist = soup.find("td").find_next("td").find_next("td").find_next("td").find_next("td").contents[1].text.strip()
-        hardnesspickaxe = soup.find("td").find_next("td").find_next("td").find_next("td").find_next("td").contents[4].text.strip()
-        firstcolour = soup.find("td", {"class": "seedColor"}).find("div").contents[1].text.replace("#", "").strip()
-        secondcolour = soup.find("td", {"class": "seedColor"}).find("div").contents[4].text.replace("#", "").strip()
-        firstcolour = await hex_to_rgb(firstcolour)
-        secondcolour = await hex_to_rgb(secondcolour)
-        growtime = soup.find("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").contents[1].text.strip()
-        gemdrop = soup.find("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").find_next("td").contents[1].text.strip()
-        try:
-            texture = soup.find("a", {"class": "lightbox"}).find("img").get("src")
-        except AttributeError:
-            texture = "This item has no texture!"
+    except AttributeError:
+        chi = "None"
 
-        item_info = ItemInfo()
-        item_info.cleanlink = cleanlink
-        item_info.website = website
-        item_info.image = image
-        item_info.description = description
-        item_info.properties = properties
-        item_info.rarity = rarity
-        item_info.itemtype = itemtype
-        item_info.chi = chi
-        item_info.hardnessfist = hardnessfist
-        item_info.hardnesspickaxe = hardnesspickaxe
-        item_info.firstcolour = firstcolour
-        item_info.secondcolour = secondcolour
-        item_info.growtime = growtime
-        item_info.gemdrop = gemdrop
-        item_info.texture = texture
-        return item_info
+    item_info = ItemInfo()
+    item_info.description = description
+    item_info.chi = chi
+    item_info.splicing_seed1 = splicing_seed1
+    item_info.splicing_seed2 = splicing_seed2
+    item_info.equip_playmod_text = equip_playmod_text
+    item_info.unequip_playmod_text = unequip_playmod_text
+    item_info.playmod_name = playmod_name
+    return item_info
+
 
 if __name__ == "__main__":
     while True:
-        inp = input("Enter item name: ")
-
-        if inp.lower().startswith("silk thread"):
-            print("Due to Fandom's stupidity, you can not search for the Silk Threads")
-            continue
-
-        if inp.lower().startswith("quit") or inp.lower().startswith("exit"):
-            break
-
-        item_name = inp
-        start_time = time.time()
         try:
-            rval = asyncio.run(find_item(item_name))
-        except AttributeError:
-            print("Item not found! Make sure you spelled it correctly!")
-            continue
-        
-        print("Item Name:", rval.cleanlink)
-        print("Fandom Website", rval.website)
-        print("Item Sprite URL:", rval.image)
-        print("Item Description:", rval.description)
-        print("Item Properties:", rval.properties)
-        print("Item Rarity:", rval.rarity)
-        print("Item Type:", rval.itemtype)
-        print("Item Chi:", rval.chi)
-        print("Hits To Break With Fist:", rval.hardnessfist)
-        print("Hits To Break With Pickaxe:", rval.hardnesspickaxe)
-        print("Item 1st RGB Colour:", rval.firstcolour)
-        print("Item 2nd RGB Colour:", rval.secondcolour)
-        print("Item Grow Time:", rval.growtime)
-        print("Item Gem Drop:", rval.gemdrop)
-        print("Item Texture:", rval.texture)
-        print("Process completed in", int(((time.time() - start_time)*1000)), "ms")
+            if "itemNames.txt" not in os.listdir():
+                asyncio.run(create_item_names())
+
+            with open("itemNames.txt", "r") as f:
+                file_content = f.read()
+
+            inp = input("Enter item name: ")
+            start_time = time.time()
+            correct_name = find_formatted_name(inp, file_content)
+            if correct_name:
+                item_info = asyncio.run(find_item(correct_name))
+                print(f"Description: {item_info.description}")
+                print(f"Chi: {item_info.chi}")
+                if (
+                    item_info.splicing_seed1 == "Blank"
+                    and item_info.splicing_seed2 == "Blank"
+                ):
+                    print(f"This item can't be spliced")
+                else:
+                    print(f"Splicing seed 1: {item_info.splicing_seed1}")
+                    print(f"Splicing seed 2: {item_info.splicing_seed2}")
+                if item_info.equip_playmod_text == "":
+                    print(f"This item has no playmod text upon equipping")
+                else:
+                    print(f"Equip playmod text: {item_info.equip_playmod_text}")
+                if item_info.unequip_playmod_text == "":
+                    print(f"This item has no playmod text upon unequipping")
+                else:
+                    print(f"Unequip playmod text: {item_info.unequip_playmod_text}")
+                if item_info.playmod_name == "":
+                    print(f"This item has no playmod")
+                else:
+                    print(f"Playmod name: {item_info.playmod_name}")
+                print(
+                    f"Process completed in",
+                    int((time.time() - start_time) * 1000),
+                    "milliseconds",
+                )
+        except KeyboardInterrupt:
+            break
