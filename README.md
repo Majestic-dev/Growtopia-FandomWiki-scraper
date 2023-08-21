@@ -1,10 +1,10 @@
 # Growtopia-FandomWiki-scraper
-Growtopia Fandom Wiki Scraper written in python using BeautifulSoup4 for web-scraping
+Growtopia Fandom Wiki Scraper written in python using [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/) for web-scraping and [growtopia.py](https://github.com/kaJob-dev/growtopia.py) to decode items.dat
 
 # Installation
 ## Requirements
 
-- [Python 3.8 or higher](https://www.python.org/downloads/)
+- [Python 3.11 or higher](https://www.python.org/downloads/)
 
 ## Guide
 
@@ -22,28 +22,14 @@ or
 python -m pip install -r requirements.txt
 ```
 
-### Running the file through VSCode
+### Usage
 
-Install Pylance and Python extensions on github, after you've done that you should be able to run the ItemSearch.py file by clicking the "Run Python File" button in the top right corner of the screen
+After you've done everything above, move the items.dat file you want to decode to the workspace, specify it on line 6 in [test.py](test.py) and run the file, everything else the code will handle.
 
-### Running the file through terminal
+# Contributing 
+All contributions are welcome! If you'd like to contribute, please make a pull request.
 
-change your current directory to the cloned repository
-```bash
-cd Growtopia-FandomWiki-scraper
-```
-
-run the file
-```bash
-python ItemSearch.py
-```
-
-### 
-
-# Usage
-## Guide
-
-### After running the ItemSearch.py file, it will ask you to enter an item name inside the python terminal, enter the item name and press enter
+Please make sure that your code is formatted correctly before making a new pull request. This project is formatted using [black](https://black.readthedocs.io/en/stable/) and [isort](https://pycqa.github.io/isort/) to sort imports. Read through open and closed pull requests and ensure that no one else has already made a similar pull request. 
 
 # License
 This project is licensed under the Apache License - see the [LICENSE](LICENSE) file for details
