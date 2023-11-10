@@ -10,7 +10,6 @@ certifi==2023.7.22
 charset-normalizer==3.2.0
 click==8.1.7
 colorama==0.4.6
-enet @ git+https://github.com/kajob-dev/pyenet@48e009ebc3b5706a873e7fc90806cc86a762fcd9
 frozenlist==1.4.0
 growtopia.py @ git+https://github.com/kajob-dev/growtopia.py.git@0c89ecb8701d77827c9d9e6bd185da3951a7101d
 idna==3.4
