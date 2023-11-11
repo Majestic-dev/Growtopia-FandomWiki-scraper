@@ -94,4 +94,4 @@ async def playmods():
         f.write(res)
 
 
-asyncio.run(merge_lines())
+asyncio.run(main())
