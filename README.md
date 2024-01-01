@@ -12,7 +12,9 @@ Growtopia Fandom Wiki Scraper written in python using [BeautifulSoup4](https://p
 ```bash
 git clone https://github.com/Majestic-dev/Growtopia-FandomWiki-scraper.git # Clone the repository
 
-python -m venv venv # I recommend creating a virtual environment for this, but this is not required
+python -m venv venv # I recommend creating a virtual environment, but this is not required
+
+source venv/bin/activate # Activate the virtual environment (if you created one)
 
 pip install -r requirements.txt # Install requirements.txt
 ```
