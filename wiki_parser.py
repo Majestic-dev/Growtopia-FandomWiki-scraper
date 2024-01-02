@@ -20,9 +20,7 @@ async def main():
 
     dat_files = glob.glob("**/*.dat", recursive=True)
 
-    items_data = growtopia.ItemsData(
-        dat_files[0]
-    )
+    items_data = growtopia.ItemsData(dat_files[0])
     await items_data.parse()
     i = -1
 

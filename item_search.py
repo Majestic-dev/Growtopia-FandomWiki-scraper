@@ -26,11 +26,10 @@ class ItemInfo:
         self.unequip_playmod_text = attrs["unequip_playmod_text"].strip()
         self.playmod_name = attrs["playmod_name"].strip()
 
+
 async def create_item_names():
     dat_files = glob.glob("**/*.dat", recursive=True)
-    items_data = growtopia.ItemsData(
-        dat_files[0]
-    )
+    items_data = growtopia.ItemsData(dat_files[0])
     await items_data.parse()
     with open("data/item_names.txt", "w") as f:
         f.write("\n".join([item.name for item in items_data.items]))
@@ -52,7 +51,16 @@ async def find_item(item: str):
     await session.close()
     soup = BeautifulSoup(data, "html.parser")
 
-    attributes = ['item_type', 'chi', 'texture_type', 'collision_type', 'hardness', 'seed_colours', 'grow_time', 'default_gem_drop']
+    attributes = [
+        "item_type",
+        "chi",
+        "texture_type",
+        "collision_type",
+        "hardness",
+        "seed_colours",
+        "grow_time",
+        "default_gem_drop",
+    ]
     results = {}
 
     try:
@@ -80,8 +88,10 @@ async def find_item(item: str):
             results[attr] = "None"
 
     # Some stupid space missing from webscraping the hardness
-    if 'hardness' in results:
-        results['hardness'] = results['hardness'].replace("HitsRestores", "Hits. Restores")
+    if "hardness" in results:
+        results["hardness"] = results["hardness"].replace(
+            "HitsRestores", "Hits. Restores"
+        )
 
     # Finding the splicing seeds
     try:
@@ -125,7 +135,10 @@ async def find_item(item: str):
 
     # Finding the playmod name
     try:
-        if results["equip_playmod_text"] != "" and results["unequip_playmod_text"] != "":
+        if (
+            results["equip_playmod_text"] != ""
+            and results["unequip_playmod_text"] != ""
+        ):
             results["playmod_name"] = (
                 soup.find("div", {"class": "mw-parser-output"})
                 .find("p")
@@ -140,6 +153,7 @@ async def find_item(item: str):
 
     item_info = ItemInfo(results)
     return item_info
+
 
 if __name__ == "__main__":
     while True:
@@ -164,7 +178,10 @@ if __name__ == "__main__":
                 print(f"Seed colours: {item_info.seed_colours}")
                 print(f"Grow time: {item_info.grow_time}")
                 print(f"Default gem drop: {item_info.default_gem_drop}")
-                if item_info.splicing_seed1 == "Blank" and item_info.splicing_seed2 == "Blank":
+                if (
+                    item_info.splicing_seed1 == "Blank"
+                    and item_info.splicing_seed2 == "Blank"
+                ):
                     print(f"This item cannot be spliced")
                 else:
                     print(f"Splicing seed 1: {item_info.splicing_seed1}")
