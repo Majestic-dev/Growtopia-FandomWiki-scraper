@@ -1,4 +1,5 @@
 import asyncio
+import glob
 import os
 
 import growtopia
@@ -11,13 +12,17 @@ async def main():
 
     if not os.path.exists("data"):
         os.makedirs("data")
-        
+
     for file in files:
         file_path = os.path.join("data", file)
         if not os.path.isfile(file_path):
             open(file_path, "a").close()
 
-    items_data = growtopia.ItemsData("")  # Specify the path to your items.dat file here
+    dat_files = glob.glob("**/*.dat", recursive=True)
+
+    items_data = growtopia.ItemsData(
+        dat_files[0]
+    )
     await items_data.parse()
     i = -1
 
