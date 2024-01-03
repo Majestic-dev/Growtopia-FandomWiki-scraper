@@ -40,7 +40,7 @@ def find_formatted_name(item: str, file_content: str):
         if line.lower().startswith(item):
             return line
 
-
+@alru_cache(maxsize=128)
 async def find_item(item: str):
     session = aiohttp.ClientSession()
     response = await session.get(
