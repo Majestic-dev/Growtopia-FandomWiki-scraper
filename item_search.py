@@ -42,6 +42,8 @@ class Parse_ItemInfo:
         self.equip_playmod_text = attrs["equip_playmod_text"].strip()
         self.unequip_playmod_text = attrs["unequip_playmod_text"].strip()
         self.playmod_name = attrs["playmod_name"].strip()
+        self.crafting_recipe = attrs["crafting_recipe"]
+        self.yield_value = attrs["yield_value"]
 
 async def create_item_names():
     dat_files = glob.glob("**/*.dat", recursive=True)
@@ -106,6 +108,30 @@ async def find_item(item: str):
             "HitsRestores", "Hits. Restores"
         )
 
+    # Finding the crafting recipe
+    try:
+        crafting_recipe = []
+
+        items = (
+            soup.find("table", {"class": "content"})
+            .find_all("tr")
+        )
+
+        first_item = items[2].find("td").find("a").text + f" {items[2].find('td').find('b').text}"
+        second_item = items[3].find("td").find("a").text + f" {items[3].find('td').find('b').text}"
+        third_item = items[4].find("td").find("a").text + f" {items[4].find('td').find('b').text}"
+        yield_value = int(items[5].find("td").find("b").text)
+
+        crafting_recipe.append(first_item)
+        crafting_recipe.append(second_item)
+        crafting_recipe.append(third_item)
+
+        results["crafting_recipe"] = crafting_recipe
+        results["yield_value"] = yield_value
+    except AttributeError:
+        results["crafting_recipe"] = ""
+        results["yield_value"] = ""
+
     # Finding the splicing seeds
     try:
         splicing_seeds = soup.find(
@@ -115,6 +141,15 @@ async def find_item(item: str):
             }
         )
 
+        all_recipe_boxes = soup.find_all(attrs={"class": "recipebox"})
+
+        obtainable_from_consumable = soup.find(
+            attrs={
+                "class": "recipebox",
+                "style": "background: #00CCCC; color: #004c4d;"
+            }
+        )
+        
         results["splicing_seed1"] = (
             splicing_seeds.find("tr").find_next("tr").find_next("tr").find("a").text
         )
@@ -126,6 +161,25 @@ async def find_item(item: str):
             .find_next("a")
             .text
         )
+        
+        if splicing_seeds is not None:
+            if results["crafting_recipe"] != "" and obtainable_from_consumable is not None and len(all_recipe_boxes) > 3:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+            
+            elif results["crafting_recipe"] != "" and obtainable_from_consumable is None and len(all_recipe_boxes) > 2:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+
+            elif results["crafting_recipe"] == "" and obtainable_from_consumable is not None and len(all_recipe_boxes) > 2:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+            
+            elif results["crafting_recipe"] == "" and obtainable_from_consumable is None and len(all_recipe_boxes) > 1:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+        
+
     except AttributeError:
         results["splicing_seed1"] = "Blank"
         results["splicing_seed2"] = "Blank"
@@ -163,30 +217,6 @@ async def find_item(item: str):
             results["playmod_name"] = ""
     except AttributeError:
         results["playmod_name"] = ""
-
-    # Finding the crafting recipe
-    try:
-        crafting_recipe = []
-
-        items = (
-            soup.find("table", {"class": "content"})
-            .find_all("tr")
-        )
-
-        first_item = items[2].find("td").find("a").text + f" {items[2].find('td').find('b').text}"
-        second_item = items[3].find("td").find("a").text + f" {items[3].find('td').find('b').text}"
-        third_item = items[4].find("td").find("a").text + f" {items[4].find('td').find('b').text}"
-        yield_value = int(items[5].find("td").find("b").text)
-
-        crafting_recipe.append(first_item)
-        crafting_recipe.append(second_item)
-        crafting_recipe.append(third_item)
-
-        results["crafting_recipe"] = crafting_recipe
-        results["yield_value"] = yield_value
-    except AttributeError:
-        results["crafting_recipe"] = ""
-        results["yield_value"] = ""
 
     return(ItemInfo(results))
 
@@ -236,6 +266,30 @@ def parse_data(id: int, data: bytes) -> ItemInfo:
             "HitsRestores", "Hits. Restores"
         )
 
+    # Finding the crafting recipe
+    try:
+        crafting_recipe = []
+
+        items = (
+            soup.find("table", {"class": "content"})
+            .find_all("tr")
+        )
+
+        first_item = items[2].find("td").find("a").text + f" {items[2].find('td').find('b').text}"
+        second_item = items[3].find("td").find("a").text + f" {items[3].find('td').find('b').text}"
+        third_item = items[4].find("td").find("a").text + f" {items[4].find('td').find('b').text}"
+        yield_value = int(items[5].find("td").find("b").text)
+
+        crafting_recipe.append(first_item)
+        crafting_recipe.append(second_item)
+        crafting_recipe.append(third_item)
+
+        results["crafting_recipe"] = crafting_recipe
+        results["yield_value"] = yield_value
+    except AttributeError:
+        results["crafting_recipe"] = ""
+        results["yield_value"] = ""
+
     # Finding the splicing seeds
     try:
         splicing_seeds = soup.find(
@@ -245,6 +299,15 @@ def parse_data(id: int, data: bytes) -> ItemInfo:
             }
         )
 
+        all_recipe_boxes = soup.find_all(attrs={"class": "recipebox"})
+
+        obtainable_from_consumable = soup.find(
+            attrs={
+                "class": "recipebox",
+                "style": "background: #00CCCC; color: #004c4d;"
+            }
+        )
+        
         results["splicing_seed1"] = (
             splicing_seeds.find("tr").find_next("tr").find_next("tr").find("a").text
         )
@@ -256,6 +319,24 @@ def parse_data(id: int, data: bytes) -> ItemInfo:
             .find_next("a")
             .text
         )
+
+        if splicing_seeds is not None:
+            if results["crafting_recipe"] != "" and obtainable_from_consumable is not None and len(all_recipe_boxes) > 3:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+            
+            elif results["crafting_recipe"] != "" and obtainable_from_consumable is None and len(all_recipe_boxes) > 2:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+
+            elif results["crafting_recipe"] == "" and obtainable_from_consumable is not None and len(all_recipe_boxes) > 2:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+            
+            elif results["crafting_recipe"] == "" and obtainable_from_consumable is None and len(all_recipe_boxes) > 1:
+                results["splicing_seed1"] = "Blank"
+                results["splicing_seed2"] = "Blank"
+
     except AttributeError:
         results["splicing_seed1"] = "Blank"
         results["splicing_seed2"] = "Blank"
@@ -293,30 +374,6 @@ def parse_data(id: int, data: bytes) -> ItemInfo:
             results["playmod_name"] = ""
     except AttributeError:
         results["playmod_name"] = ""
-
-    # Finding the crafting recipe
-    try:
-        crafting_recipe = []
-
-        items = (
-            soup.find("table", {"class": "content"})
-            .find_all("tr")
-        )
-
-        first_item = items[2].find("td").find("a").text + f" {items[2].find('td').find('b').text}"
-        second_item = items[3].find("td").find("a").text + f" {items[3].find('td').find('b').text}"
-        third_item = items[4].find("td").find("a").text + f" {items[4].find('td').find('b').text}"
-        yield_value = int(items[5].find("td").find("b").text)
-
-        crafting_recipe.append(first_item)
-        crafting_recipe.append(second_item)
-        crafting_recipe.append(third_item)
-
-        results["crafting_recipe"] = crafting_recipe
-        results["yield_value"] = yield_value
-    except AttributeError:
-        results["crafting_recipe"] = ""
-        results["yield_value"] = ""
 
     return Parse_ItemInfo(id, results)
 
@@ -375,7 +432,7 @@ if __name__ == "__main__":
                 print(
                     f"Process completed in",
                     int((time.time() - start_time) * 1000),
-                    "milliseconds",
+                    "milliseconds\n\n\n",
                 )
         except KeyboardInterrupt:
             break
